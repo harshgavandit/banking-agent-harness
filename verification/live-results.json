@@ -1,0 +1,89 @@
+{
+  "model": "openai/gpt-4o-mini",
+  "timeout_seconds": 30,
+  "checks": {
+    "redis_boundary": true,
+    "redis_expiry": true,
+    "live_balance_tool": true,
+    "stage_without_debit": true,
+    "confirmed_transfer": true,
+    "transaction_lookup": true,
+    "blocked_beneficiary": true,
+    "ambiguous_beneficiary": true
+  },
+  "tool_results": [
+    {
+      "tool": "get_balance",
+      "response": {
+        "account": "savings",
+        "balance": 200000,
+        "status": "ACTIVE",
+        "daily_limit": 100000,
+        "daily_used": 25000
+      }
+    },
+    {
+      "tool": "initiate_transfer",
+      "response": {
+        "status": "PENDING_CONFIRMATION",
+        "beneficiary_name": "Aaron Johnson",
+        "account_last4": "5678",
+        "amount": 1000
+      }
+    },
+    {
+      "tool": "confirm_transfer",
+      "response": {
+        "status": "SUCCESS",
+        "transaction_id": "TXN001",
+        "beneficiary_name": "Aaron Johnson",
+        "amount": 1000,
+        "new_balance": 199000.0
+      }
+    },
+    {
+      "tool": "get_transaction_status",
+      "response": {
+        "id": "TXN001",
+        "beneficiary_id": "B3",
+        "beneficiary_name": "Aaron Johnson",
+        "amount": 1000,
+        "status": "SUCCESS"
+      }
+    },
+    {
+      "tool": "initiate_transfer",
+      "response": {
+        "status": "REJECTED",
+        "reason": "Beneficiary 'Nick Anderson' is blocked and cannot receive transfers."
+      }
+    },
+    {
+      "tool": "initiate_transfer",
+      "response": {
+        "status": "NEEDS_CLARIFICATION",
+        "candidates": [
+          {
+            "id": "B1",
+            "name": "John Smith",
+            "status": "ACTIVE",
+            "account_last4": "3456"
+          },
+          {
+            "id": "B2",
+            "name": "John Luis",
+            "status": "ACTIVE",
+            "account_last4": "4567"
+          },
+          {
+            "id": "B3",
+            "name": "Aaron Johnson",
+            "status": "ACTIVE",
+            "account_last4": "5678"
+          }
+        ]
+      }
+    }
+  ],
+  "passed": true
+}

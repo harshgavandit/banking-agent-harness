@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+.env*
+!.env.example
+.DS_Store
+.adk/
+.pytest_cache/
+verification/server*.log
+verification/server.pid
+.public-check/
+__MACOSX/
+._*
+Thumbs.db
+*.log
+verification/tests-results.xml
+verification/manifest.json

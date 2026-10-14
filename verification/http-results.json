@@ -1,0 +1,10 @@
+{
+  "base_url": "http://127.0.0.1:8010",
+  "checks": {
+    "ui_served": true,
+    "agent_discovered": true,
+    "http_balance_tool": true,
+    "http_request_rate_block": true
+  },
+  "passed": true
+}
