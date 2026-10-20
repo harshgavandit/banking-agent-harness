@@ -32,4 +32,6 @@ jobs:
       - name: Run offline regression tests
         run: python -m pytest -q
       - name: Check Python syntax
-        run: python -m compileall -q app scripts tests
+        run: python -m compileall -q app scripts tests index.py
+      - name: Check public UI JavaScript
+        run: node --check web/app.js

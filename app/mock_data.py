@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import copy
+from contextlib import contextmanager
+from contextvars import ContextVar
 from typing import Any
 
 ACCOUNT_ID = "savings"
@@ -28,6 +30,31 @@ beneficiaries: list[dict[str, str]] = copy.deepcopy(_INITIAL_BENEFICIARIES)
 transactions: dict[str, dict[str, Any]] = {}
 
 _transaction_counter = 0
+_visitor_ledger = ContextVar("visitor_ledger", default=None)
+
+
+def new_ledger():
+    return {"accounts": copy.deepcopy(_INITIAL_ACCOUNTS), "transactions": {}, "counter": 0}
+
+
+@contextmanager
+def use_ledger(ledger):
+    """Bind a visitor's persisted demo ledger to this asynchronous request."""
+    token = _visitor_ledger.set(ledger)
+    try:
+        yield
+    finally:
+        _visitor_ledger.reset(token)
+
+
+def current_accounts():
+    ledger = _visitor_ledger.get()
+    return ledger["accounts"] if ledger is not None else accounts
+
+
+def current_transactions():
+    ledger = _visitor_ledger.get()
+    return ledger["transactions"] if ledger is not None else transactions
 
 
 def reset_state() -> None:
@@ -40,6 +67,10 @@ def reset_state() -> None:
 
 
 def next_transaction_id() -> str:
+    ledger = _visitor_ledger.get()
+    if ledger is not None:
+        ledger["counter"] += 1
+        return f"TXN{ledger['counter']:03d}"
     global _transaction_counter
     _transaction_counter += 1
     return f"TXN{_transaction_counter:03d}"

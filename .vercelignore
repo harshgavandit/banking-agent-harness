@@ -1,0 +1,12 @@
+.git
+.venv
+.env*
+app/.env*
+**/__pycache__
+**/.adk
+.pytest_cache
+.public-check
+verification
+documentation.pdf
+documentation.md
+tests

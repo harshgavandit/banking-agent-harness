@@ -15,3 +15,5 @@ Thumbs.db
 *.log
 verification/tests-results.xml
 verification/manifest.json
+.vercel/
+verification/deployment-local.json

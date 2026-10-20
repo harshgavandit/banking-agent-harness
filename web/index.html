@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Try a banking agent with deterministic validation, explicit transfer confirmation, and verified tool results. A mock banking demonstration.">
+  <meta name="theme-color" content="#f5f7fb">
+  <title>Banking Agent · Harness Demo</title>
+  <link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/styles.css">
+  <script src="/assets/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="/" aria-label="Banking Agent home"><span class="brand-icon">B<span>·</span></span><span>Banking Agent<small>HARNESS ENGINEERING DEMO</small></span></a><div class="header-right"><span class="demo-label"><i></i> Mock banking only</span><a href="https://github.com/harshgavandit/banking-agent-harness" target="_blank" rel="noopener noreferrer" class="source-link">View source <span aria-hidden="true">↗</span></a></div></header>
+  <main>
+    <div class="page-heading"><div><p class="eyebrow">A WORKSPACE FOR YOUR DEMO ACCOUNT</p><h1>Your banking, with guardrails.</h1><p class="intro">Ask naturally. Review the details. You approve every transfer.</p></div><span id="connection" class="connection" role="status">Connecting to your session…</span></div>
+    <div class="workspace">
+      <aside aria-label="Demo account overview">
+        <section class="card account-card"><div class="card-label"><span>Savings account</span><span class="status-badge">DEMO</span></div><p class="balance-label">Available balance</p><div id="balance" class="balance">—</div><p class="currency">INR · Indian Rupees</p><div class="account-rule"></div><div class="account-row"><span>Daily transfer limit</span><strong id="daily-limit">—</strong></div><div class="account-row"><span>Used today</span><strong id="daily-used">—</strong></div><div class="remaining"><span>Remaining allowance</span><strong id="remaining">—</strong></div><div class="account-note"><span aria-hidden="true">◎</span> A separate mock account, just for this session.</div></section>
+        <section class="card beneficiaries-card"><div class="card-label"><h2>Saved beneficiaries</h2><span id="beneficiary-count" class="muted">—</span></div><div id="beneficiaries" class="beneficiaries"><p class="muted">Loading your demo beneficiaries…</p></div></section>
+        <section class="safeguard-note"><div class="shield" aria-hidden="true">✓</div><div><h2>You stay in control</h2><p>Transfers are validated in code and require a separate confirmation. No real money moves.</p></div></section>
+      </aside>
+      <section class="card conversation" aria-label="Banking assistant">
+        <header class="chat-header"><div class="assistant-avatar" aria-hidden="true">✦</div><div><h2>Banking assistant</h2><p>Connected to your demo account</p></div><span class="model-label">AI + deterministic checks</span></header>
+        <div id="messages" class="messages" role="log" aria-live="polite" aria-label="Conversation">
+          <div id="welcome" class="welcome"><span class="welcome-symbol" aria-hidden="true">✦</span><h2>A little help with your banking.</h2><p>Check your balance, find a beneficiary, or try a transfer.<br>Every action follows the same rules, every time.</p><div class="examples"><button type="button" data-prompt="What is my savings account balance?">Check my balance <span>↗</span></button><button type="button" data-prompt="Transfer 1000 rupees to Aaron.">Transfer ₹1,000 to Aaron <span>↗</span></button><button type="button" data-prompt="Find beneficiaries named John.">Find a beneficiary <span>↗</span></button><button type="button" data-prompt="Transfer 1000 rupees to Nick.">Try a blocked transfer <span>↗</span></button></div></div>
+        </div>
+        <div id="pending" class="pending" hidden><div><strong>Review before confirming</strong><p id="pending-description"></p></div><button id="confirm" type="button">Confirm transfer <span aria-hidden="true">→</span></button></div>
+        <div id="error" class="error" role="alert" hidden></div>
+        <form id="chat-form" class="composer"><label class="sr-only" for="message">Message the banking assistant</label><div class="composer-input"><textarea id="message" name="message" rows="2" maxlength="2000" placeholder="Ask about your account or start a transfer…" required disabled></textarea><button id="send" type="submit" aria-label="Send message" disabled><span aria-hidden="true">↑</span></button></div><div class="composer-footer"><span>Mock data only. Please don’t enter personal or financial information.</span><span class="keyboard-hint">Enter to send</span></div></form>
+      </section>
+    </div>
+    <footer class="page-footer"><span>Built to demonstrate governed AI actions.</span><span>Validation <b>·</b> Confirmation <b>·</b> Rate limits <b>·</b> Auditability</span></footer>
+  </main>
+</body>
+</html>

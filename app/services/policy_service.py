@@ -43,7 +43,7 @@ def validate_transfer(beneficiary_query: str, amount: float) -> TransferValidati
             status="REJECTED", reason="Transfer amount must be greater than zero."
         )
 
-    account = mock_data.accounts[mock_data.ACCOUNT_ID]
+    account = mock_data.current_accounts()[mock_data.ACCOUNT_ID]
     if account["status"] != "ACTIVE":
         return TransferValidation(status="REJECTED", reason="Your account is not active.")
 

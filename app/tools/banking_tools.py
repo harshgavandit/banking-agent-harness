@@ -21,7 +21,7 @@ from app.services import policy_service, transaction_executor, transfer_service
 
 def get_balance() -> dict[str, Any]:
     """Return the balance, status, and daily transfer limit usage for the user's savings account."""
-    account = mock_data.accounts[mock_data.ACCOUNT_ID]
+    account = mock_data.current_accounts()[mock_data.ACCOUNT_ID]
     return {
         "account": mock_data.ACCOUNT_ID,
         "balance": account["balance"],
@@ -142,7 +142,7 @@ def confirm_transfer(tool_context: ToolContext = None) -> dict[str, Any]:
 
     outcome = transaction_executor.execute()
 
-    account = mock_data.accounts[mock_data.ACCOUNT_ID]
+    account = mock_data.current_accounts()[mock_data.ACCOUNT_ID]
     if outcome in ("SUCCESS", "PENDING"):
         # A pending transfer still places a hold on the funds; a failed one
         # never leaves the account.
@@ -150,7 +150,7 @@ def confirm_transfer(tool_context: ToolContext = None) -> dict[str, Any]:
         account["daily_used"] = float(Decimal(str(account["daily_used"])) + Decimal(str(pending.amount)))
 
     transaction_id = mock_data.next_transaction_id()
-    mock_data.transactions[transaction_id] = {
+    mock_data.current_transactions()[transaction_id] = {
         "id": transaction_id,
         "beneficiary_id": pending.beneficiary_id,
         "beneficiary_name": pending.beneficiary_name,
@@ -173,7 +173,7 @@ def confirm_transfer(tool_context: ToolContext = None) -> dict[str, Any]:
 
 def get_transaction_status(transaction_id: str) -> dict[str, Any]:
     """Look up the status of a previously executed transfer by transaction id."""
-    transaction = mock_data.transactions.get(transaction_id)
+    transaction = mock_data.current_transactions().get(transaction_id)
     if transaction is None:
         return {"status": "ERROR", "reason": f"No transaction found with id '{transaction_id}'."}
     return transaction

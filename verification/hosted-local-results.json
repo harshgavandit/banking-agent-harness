@@ -1,0 +1,20 @@
+{
+  "base_url": "http://127.0.0.1:8011",
+  "checks": {
+    "page_served": true,
+    "health": true,
+    "initial_balance": true,
+    "private_cookie": true,
+    "stage_without_debit": true,
+    "stage_tool": true,
+    "proposal_restored": true,
+    "confirmed_once": true,
+    "confirm_tool": true,
+    "persisted_balance_tool": true,
+    "visitor_isolation": true,
+    "developer_ui_not_public": true,
+    "secret_file_not_public": true,
+    "docs_not_public": true
+  },
+  "passed": true
+}
