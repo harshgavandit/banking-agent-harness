@@ -45,6 +45,7 @@ The important boundaries live in code:
 | Actual outcome | [`transaction_executor.py`](app/services/transaction_executor.py) supplies `SUCCESS`, `FAILED`, or `PENDING`. Failed transfers leave the balance unchanged; pending transfers hold funds. |
 | Visitor isolation | [`hosted_store.py`](app/hosted_store.py) keeps one Redis snapshot per visitor with a 120-second lease, compare-owner commit, and 24-hour inactivity expiry. |
 | Bounded execution | [`agent.py`](app/agent.py) applies Redis user/model admission and tool limits. The hosted runner bounds each turn to 75 seconds and eight model calls. |
+| Request boundary | [`web.py`](app/web.py) validates declared lengths and caps actual streamed POST bodies at 12,000 bytes before parsing or calling a handler. Missing, chunked or falsely small length headers cannot bypass the byte limit. Error responses retain the API's no-store and browser security headers. |
 
 ## Run locally
 
@@ -87,7 +88,7 @@ python -m compileall -q app scripts tests index.py
 node --check web/app.js
 ```
 
-The offline suite covers policy rejection, later-turn confirmation, execution outcomes, visitor isolation, signed cookies, cross-origin rejection, and overlapping turns. GitHub Actions runs it on Windows and Linux with Python 3.12; tests use doubles rather than paid provider requests.
+The offline suite covers policy rejection, later-turn confirmation, execution outcomes, visitor isolation, signed cookies, cross-origin rejection, overlapping turns, and actual ASGI body limits. Request-boundary tests include malformed and duplicate lengths, zero-prefixed length overflow, chunked input, false length claims and exact-limit byte preservation. GitHub Actions runs it on Windows and Linux with Python 3.12; tests use doubles rather than paid provider requests.
 
 With the local web app running and credentials configured, `python scripts/verify_hosted.py http://127.0.0.1:8011` exercises real model calls, restored proposals, and separate visitor accounts. It consumes provider quota and changes only synthetic demo account state. The separate `scripts/verify_live.py` and `scripts/verify_http.py` check the agent and ADK developer interface.
 

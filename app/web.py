@@ -5,6 +5,7 @@ import hmac
 import os
 import re
 import secrets
+from ipaddress import ip_address
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
@@ -56,6 +57,22 @@ def _check_origin(request):
         raise HTTPException(403, "This request must come from the demo website.")
 
 
+def _session_address(request):
+    peer = request.client.host if request.client else "unknown"
+    if os.getenv("VERCEL") != "1":
+        return peer
+    # Vercel supplies this IP at its edge; generic forwarding headers are not
+    # a trusted identity. Ambiguous or malformed platform values use the peer.
+    values = request.headers.getlist("x-vercel-forwarded-for")
+    if len(values) != 1 or "%" in values[0]:
+        return peer
+    try:
+        address = ip_address(values[0].strip())
+    except ValueError:
+        return peer
+    return str(getattr(address, "ipv4_mapped", None) or address)
+
+
 def _public(snapshot):
     return {"account": snapshot["ledger"]["accounts"][mock_data.ACCOUNT_ID],
         "messages": snapshot["messages"], "transactions": list(snapshot["ledger"]["transactions"].values()),
@@ -63,18 +80,57 @@ def _public(snapshot):
         "beneficiaries": [mock_data.public_beneficiary(x) for x in mock_data.beneficiaries]}
 
 
-@app.middleware("http")
-async def security_headers(request, call_next):
-    if request.method == "POST" and int(request.headers.get("content-length", "0")) > 12000:
-        return JSONResponse({"detail": "Request is too large."}, status_code=413)
-    response = await call_next(request)
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["Referrer-Policy"] = "same-origin"
-    response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
-    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
-    if request.url.path.startswith("/api/"):
-        response.headers["Cache-Control"] = "no-store"
-    return response
+class RequestBoundary:
+    """Bound actual streamed bytes before parsing; length headers are only hints."""
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        async def secure_send(message):
+            if message["type"] == "http.response.start":
+                headers = [(b"x-content-type-options", b"nosniff"),
+                    (b"referrer-policy", b"same-origin"),
+                    (b"content-security-policy", b"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"),
+                    (b"permissions-policy", b"camera=(), microphone=(), geolocation=()")]
+                if scope["path"].startswith("/api/"):
+                    headers.append((b"cache-control", b"no-store"))
+                message["headers"] = list(message.get("headers", [])) + headers
+            await send(message)
+        if scope["method"] == "POST":
+            lengths = [value for key, value in scope.get("headers", []) if key.lower() == b"content-length"]
+            if len(lengths) > 1 or (lengths and not re.fullmatch(rb"[0-9]+", lengths[0])):
+                return await JSONResponse({"detail": "Invalid Content-Length."}, status_code=400)(scope, receive, secure_send)
+            # Avoid integer conversion of untrusted, arbitrarily long digit strings.
+            declared = lengths[0].lstrip(b"0") if lengths else b""
+            if len(declared) > 5 or int(declared or b"0") > 12000:
+                return await JSONResponse({"detail": "Request is too large."}, status_code=413)(scope, receive, secure_send)
+            parts, size = [], 0
+            while True:
+                message = await receive()
+                if message["type"] == "http.disconnect":
+                    return
+                body = message.get("body", b"")
+                size += len(body)
+                if size > 12000:
+                    return await JSONResponse({"detail": "Request is too large."}, status_code=413)(scope, receive, secure_send)
+                parts.append(body)
+                if not message.get("more_body", False):
+                    break
+            buffered = b"".join(parts)
+            original_receive, delivered = receive, False
+            async def buffered_receive():
+                nonlocal delivered
+                if not delivered:
+                    delivered = True
+                    return {"type": "http.request", "body": buffered, "more_body": False}
+                return await original_receive()
+            receive = buffered_receive
+        return await self.app(scope, receive, secure_send)
+
+
+app.add_middleware(RequestBoundary)
 
 
 @app.exception_handler(StoreUnavailable)
@@ -110,8 +166,7 @@ async def create_session(request: Request):
         if existing is not None:
             return _public(existing)
     if settings.rate_enabled:
-        address = request.headers.get("x-forwarded-for", request.client.host if request.client else "unknown").split(",")[0].strip()
-        decision = await rate_limiter.check("hosted-session:" + address, 20, 60)
+        decision = await rate_limiter.check("hosted-session:" + _session_address(request), 20, 60)
         if not decision.allowed:
             raise HTTPException(503 if decision.unavailable else 429, "Please wait a minute before starting another demo.")
     sid = secrets.token_hex(32)
